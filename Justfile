@@ -1,0 +1,2 @@
+run:
+		lua init.lua
