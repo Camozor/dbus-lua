@@ -7,9 +7,11 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      myLuaEnv = pkgs.lua5_2.withPackages (ps: with ps; [ luasocket ]);
     in {
       defaultPackage.${system} = pkgs.mkShell {
-        buildInputs = with pkgs; [ lua lua51Packages.luarocks just ];
+        buildInputs = with pkgs;
+          [ lua lua51Packages.luarocks myLuaEnv ] ++ [ just ];
       };
     };
 }
