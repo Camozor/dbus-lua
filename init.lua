@@ -36,9 +36,6 @@ print("<-- " .. response)
 if response:match("^OK") then
 	-- 6. Negotiate Unix File Descriptors
 	-- We tell the daemon we are ready to proceed
-	client:send("BEGIN\r\n")
-	print("--> BEGIN")
-	print("Authentication Successful!")
 else
 	print("Authentication Failed: " .. tostring(response))
 	os.exit(1)
@@ -81,17 +78,36 @@ local SERIAL = 0x01 -- Our first message
 -- 2. Variable Header Fields (The "Routing" info)
 -- Each field is a 'struct' { byte: code, variant: value }
 -- Field codes: 1=Path, 2=Interface, 3=Member, 6=Destination
+-- local function pack_header_field(code, sig, value)
+-- 	local s = pack_byte(code)
+-- 	s = s .. pack_byte(#sig) .. sig .. "\0"
+--
+-- 	-- Align value to 4-byte boundary (standard for D-Bus strings/paths)
+-- 	while #s % 4 ~= 0 do
+-- 		s = s .. "\0"
+-- 	end
+-- 	s = s .. pack_dbus_string(value)
+--
+-- 	-- Align the whole field entry to 8-byte boundary
+-- 	while #s % 8 ~= 0 do
+-- 		s = s .. "\0"
+-- 	end
+-- 	return s
+-- end
 local function pack_header_field(code, sig, value)
+	-- 1. The Struct starts with a byte (code)
 	local s = pack_byte(code)
+	-- 2. Then a signature (variant) which is: byte length + string + \0
 	s = s .. pack_byte(#sig) .. sig .. "\0"
 
-	-- Align value to 4-byte boundary (standard for D-Bus strings/paths)
+	-- 3. The value inside the variant must be 4-aligned (for strings/paths)
 	while #s % 4 ~= 0 do
 		s = s .. "\0"
 	end
 	s = s .. pack_dbus_string(value)
 
-	-- Align the whole field entry to 8-byte boundary
+	-- 4. THE KEY: The entire field must be padded to 8 bytes
+	-- so the NEXT field starts aligned.
 	while #s % 8 ~= 0 do
 		s = s .. "\0"
 	end
@@ -99,41 +115,50 @@ local function pack_header_field(code, sig, value)
 end
 
 -- Build the fields for the Hello call
+-- -- 1. Build the fields string first to know its length
 local fields = ""
-fields = fields .. pack_header_field(1, "o", "/org/freedesktop/DBus") -- Path
-fields = fields .. pack_header_field(2, "s", "org.freedesktop.DBus") -- Interface
-fields = fields .. pack_header_field(3, "s", "Hello") -- Member
-fields = fields .. pack_header_field(6, "s", "org.freedesktop.DBus") -- Destination
+fields = fields .. pack_header_field(1, "o", "/org/freedesktop/DBus")
+fields = fields .. pack_header_field(2, "s", "org.freedesktop.DBus")
+fields = fields .. pack_header_field(3, "s", "Hello")
+fields = fields .. pack_header_field(6, "s", "org.freedesktop.DBus")
 
--- 3. Assemble the Final Packet
-local body_length = 0
+-- 2. Fixed Header (12 bytes)
+local fixed_header = pack_byte(IS_LITTLE_ENDIAN) -- 0x6c
+	.. pack_byte(TYPE_METHOD_CALL) -- 0x01
+	.. pack_byte(FLAGS_NONE) -- 0x00
+	.. pack_byte(VERSION) -- 0x01
+	.. pack_uint32(0) -- Body Length (Hello has no body)
+	.. pack_uint32(1) -- Serial
+
+-- 3. The "Variable Header" must start with the length of the fields array
 local fields_length = #fields
+local header_plus_fields = fixed_header .. pack_uint32(fields_length) .. fields
 
--- The fixed header is exactly 12 bytes
-local fixed_header = pack_byte(IS_LITTLE_ENDIAN)
-	.. pack_byte(TYPE_METHOD_CALL)
-	.. pack_byte(FLAGS_NONE)
-	.. pack_byte(VERSION)
-	.. pack_uint32(body_length)
-	.. pack_uint32(SERIAL)
-
--- The Full Header: Fixed (12) + Fields Length (4) + Fields + Padding
-local full_header = fixed_header .. pack_uint32(fields_length) .. fields
-
--- Crucial: Pad the entire header to an 8-byte boundary before the body
-while #full_header % 8 ~= 0 do
-	full_header = full_header .. "\0"
+-- 4. Final Alignment: The whole header must be padded to 8 bytes
+while #header_plus_fields % 8 ~= 0 do
+	header_plus_fields = header_plus_fields .. "\0"
 end
 
--- Helper to unpack a 32-bit little-endian integer from a string at a specific position
-local function unpack_uint32(str, pos)
-	local b1, b2, b3, b4 = str:byte(pos, pos + 3)
-	return b1 + (b2 * 256) + (b3 * 65536) + (b4 * 16777216)
-end
+client:send("BEGIN\r\n")
+print("--> BEGIN")
+print("Authentication Successful!")
 
--- 4. Send and Listen for our Unique Name
-client:send(full_header)
+local stream = "BEGIN\r\n" .. header_plus_fields
+
+client:send(stream)
 print("--> Sent Binary Hello")
+
+local function hex_dump(str)
+	local dump = {}
+	for i = 1, #str do
+		table.insert(dump, string.format("%02x", str:byte(i)))
+	end
+	return table.concat(dump, " ")
+end
+
+print("<-- Header Hex: " .. hex_dump(header_plus_fields))
+print("Header length= " .. #fixed_header)
+print("Sending packet of length: " .. #header_plus_fields)
 
 local response_header, err = client:receive(16) -- Read enough to get the lengths
 if not response_header then
