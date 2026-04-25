@@ -8,7 +8,8 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
     in {
-      defaultPackage.${system} =
-        pkgs.mkShell { buildInputs = with pkgs; [ lua just ]; };
+      defaultPackage.${system} = pkgs.mkShell {
+        buildInputs = with pkgs; [ lua lua51Packages.luarocks just ];
+      };
     };
 }
