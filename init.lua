@@ -132,18 +132,18 @@ local fixed_header = pack_byte(IS_LITTLE_ENDIAN) -- 0x6c
 
 -- 3. The "Variable Header" must start with the length of the fields array
 local fields_length = #fields
-local header_plus_fields = fixed_header .. pack_uint32(fields_length) .. fields
+local hello_packet = fixed_header .. pack_uint32(fields_length) .. fields
 
 -- 4. Final Alignment: The whole header must be padded to 8 bytes
-while #header_plus_fields % 8 ~= 0 do
-	header_plus_fields = header_plus_fields .. "\0"
+while #hello_packet % 8 ~= 0 do
+	hello_packet = hello_packet .. "\0"
 end
 
 client:send("BEGIN\r\n")
 print("--> BEGIN")
 print("Authentication Successful!")
 
-local stream = "BEGIN\r\n" .. header_plus_fields
+local stream = "BEGIN\r\n" .. hello_packet
 
 client:send(stream)
 print("--> Sent Binary Hello")
@@ -156,9 +156,9 @@ local function hex_dump(str)
 	return table.concat(dump, " ")
 end
 
-print("<-- Header Hex: " .. hex_dump(header_plus_fields))
+print("<-- Header Hex: " .. hex_dump(hello_packet))
 print("Header length= " .. #fixed_header)
-print("Sending packet of length: " .. #header_plus_fields)
+print("Sending packet of length: " .. #hello_packet)
 
 local response_header, err = client:receive(16) -- Read enough to get the lengths
 if not response_header then
