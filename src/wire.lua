@@ -19,12 +19,18 @@ M.encode_byte = function(b)
 	return string.char(b)
 end
 
----@param str string
+---@param s string
 ---@return string
-M.pretty_hex_dump = function(str)
+M.encode_string = function(s)
+	return M.encode_uint32(#s) .. s .. "\0"
+end
+
+---@param s string
+---@return string
+M.pretty_hex_dump = function(s)
 	local dump = {}
-	for i = 1, #str do
-		table.insert(dump, string.format("%02x", str:byte(i)))
+	for i = 1, #s do
+		table.insert(dump, string.format("%02x", s:byte(i)))
 	end
 	return table.concat(dump, " ")
 end
