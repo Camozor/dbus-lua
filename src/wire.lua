@@ -2,7 +2,7 @@ local M = {}
 
 ---@param n number
 ---@return string
-M.pack_uint32 = function(n)
+M.encode_uint32 = function(n)
 	local b1 = n % 256
 	n = (n - b1) / 256
 	local b2 = n % 256
@@ -15,7 +15,7 @@ end
 
 ---@param b number
 ---@return string
-M.pack_byte = function(b)
+M.encode_byte = function(b)
 	return string.char(b)
 end
 
