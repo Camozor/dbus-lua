@@ -1,6 +1,18 @@
 local wire = require("src.wire")
 
 describe("numbers", function()
+	describe("compute_padding", function()
+		it("empty", function()
+			local padding = wire.compute_padding(4, "")
+			assert.equals(wire.pretty_hex_dump(padding), "")
+		end)
+
+		it("non empty", function()
+			local padding = wire.compute_padding(4, wire.pack_byte(255, ""))
+			assert.equals(wire.pretty_hex_dump(padding), "00 00 00")
+		end)
+	end)
+
 	it("encode_uint32", function()
 		local first = wire.pretty_hex_dump(wire.encode_uint32(10))
 		assert.equals(first, "0a 00 00 00")

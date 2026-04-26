@@ -1,5 +1,5 @@
 run:
-		lua init.lua
+		lua src/hello.lua
 
 test:
 		busted test
