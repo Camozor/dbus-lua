@@ -20,4 +20,11 @@ describe("numbers", function()
 		local encoded = wire.encode_string(s)
 		assert.equals(wire.pretty_hex_dump(encoded), "03 00 00 00 66 6f 6f 00")
 	end)
+
+	it("pack_string", function()
+		local s = "foo"
+		local m = wire.pack_byte(255, "")
+		local packed = wire.pack_string(s, m)
+		assert.equals(wire.pretty_hex_dump(packed), "ff 00 00 00 03 00 00 00 66 6f 6f 00")
+	end)
 end)

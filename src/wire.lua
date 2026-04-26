@@ -46,13 +46,29 @@ end
 ---@param marshaled string
 ---@return string
 M.pack_uint32 = function(n, marshaled)
-	local len = 4 - (#marshaled % 4)
+	local padding = M.compute_padding(4, marshaled)
+	return marshaled .. padding .. M.encode_uint32(n)
+end
+
+---@param max_padding number
+---@param marshaled string
+---@return string
+M.compute_padding = function(max_padding, marshaled)
+	local len = max_padding - (#marshaled % max_padding)
 	local padding = ""
 	for _ = 1, len do
 		padding = padding .. "\0"
 	end
 
-	return marshaled .. padding .. M.encode_uint32(n)
+	return padding
+end
+
+---@param s string
+---@param marshaled string
+---@return string
+M.pack_string = function(s, marshaled)
+	local padding = M.compute_padding(4, marshaled)
+	return marshaled .. padding .. M.encode_string(s)
 end
 
 return M
