@@ -29,4 +29,24 @@ M.pretty_hex_dump = function(str)
 	return table.concat(dump, " ")
 end
 
+---@param n number
+---@param marshaled string
+---@return string
+M.pack_byte = function(n, marshaled)
+	return marshaled .. M.encode_byte(n)
+end
+
+---@param n number
+---@param marshaled string
+---@return string
+M.pack_uint32 = function(n, marshaled)
+	local len = 4 - (#marshaled % 4)
+	local padding = ""
+	for _ = 1, len do
+		padding = padding .. "\0"
+	end
+
+	return marshaled .. padding .. M.encode_uint32(n)
+end
+
 return M
