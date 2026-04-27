@@ -1,5 +1,5 @@
 run:
-		lua src/hello.lua
+		luajit src/socket.lua
 
 test:
 		busted test
