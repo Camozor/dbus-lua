@@ -11,7 +11,7 @@
     in {
       defaultPackage.${system} = pkgs.mkShell {
         buildInputs = with pkgs;
-          [ luajit lua51Packages.luarocks myLuaEnv ] ++ [ just ];
+          [ luajit lua51Packages.luarocks myLuaEnv ] ++ [ just ] ++ [ socat ];
       };
     };
 }

@@ -1,5 +1,8 @@
 local ffi = require("ffi")
 
+local AF_UNIX = 1
+local SOCK_STREAM = 1
+
 ffi.cdef([[
     typedef short sa_family_t;
     struct sockaddr_un {
@@ -12,30 +15,67 @@ ffi.cdef([[
     int close(int fd);
 ]])
 
-local AF_UNIX = 1
-local SOCK_STREAM = 1
+--
+-- -- 1. Create the socket
+--
+-- -- 2. Prepare the address structure
+-- local addr = ffi.new("struct sockaddr_un")
+-- addr.sun_family = AF_UNIX
+-- ffi.copy(addr.sun_path, "/tmp/test.sock")
+--
+-- -- 3. Connect
+-- if ffi.C.connect(fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
+-- 	ffi.C.close(fd)
+-- 	error("Connect failed - is the server running?")
+-- end
+--
+-- -- 4. Write data
+-- local msg = "Hello from Lua FFI!"
+-- ffi.C.write(fd, msg, #msg)
+--
+-- -- 5. Cleanup
+-- ffi.C.close(fd)
+-- print("Message sent successfully!")
 
--- 1. Create the socket
-local fd = ffi.C.socket(AF_UNIX, SOCK_STREAM, 0)
-if fd < 0 then
-	error("Socket creation failed")
+---@class Socket
+---@field fd number
+local Socket = {}
+Socket.__index = Socket
+
+---@return Socket
+local function socket()
+	local s = setmetatable({}, Socket)
+
+	local fd = ffi.C.socket(AF_UNIX, SOCK_STREAM, 0)
+	if fd < 0 then
+		print("Socket creation failed")
+	end
+
+	s.fd = fd
+
+	return s
 end
 
--- 2. Prepare the address structure
-local addr = ffi.new("struct sockaddr_un")
-addr.sun_family = AF_UNIX
-ffi.copy(addr.sun_path, "/tmp/test.sock")
+---@param path string
+function Socket:connect(path)
+	local addr = ffi.new("struct sockaddr_un")
+	addr.sun_family = AF_UNIX
+	ffi.copy(addr.sun_path, path)
 
--- 3. Connect
-if ffi.C.connect(fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
-	ffi.C.close(fd)
-	error("Connect failed - is the server running?")
+	if ffi.C.connect(self.fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
+		local err = ffi.errno()
+		ffi.C.close(self.fd)
+		print("Connect failed" .. tostring(err))
+	end
 end
 
--- 4. Write data
-local msg = "Hello from Lua FFI!"
-ffi.C.write(fd, msg, #msg)
+---@param message string
+function Socket:send(message)
+	ffi.C.write(self.fd, message, #message)
+end
 
--- 5. Cleanup
-ffi.C.close(fd)
-print("Message sent successfully!")
+function Socket:close()
+	ffi.C.close(self.fd)
+end
+
+return socket
