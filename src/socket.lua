@@ -74,6 +74,10 @@ function Socket:send(message)
 	ffi.C.write(self.fd, message, #message)
 end
 
+function Socket:receive()
+
+end
+
 function Socket:close()
 	ffi.C.close(self.fd)
 end
