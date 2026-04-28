@@ -16,6 +16,10 @@ ffi.cdef([[
     int close(int fd);
 ]])
 
+---@class sockaddr_un: ffi.cdata*
+---@field sun_family number
+---@field sun_path ffi.cdata*
+
 ---@class Socket
 ---@field fd number
 local Socket = {}
@@ -38,7 +42,7 @@ end
 ---@param path string
 ---@return string | nil
 function Socket:connect(path)
-	local addr = ffi.new("struct sockaddr_un")
+	local addr = ffi.new("struct sockaddr_un") --[[@as sockaddr_un]]
 	addr.sun_family = AF_UNIX
 	ffi.copy(addr.sun_path, path)
 
