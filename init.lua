@@ -1,4 +1,4 @@
-local socket = require("socket.unix") -- Requires LuaSocket
+local socket = require("src.socket")
 
 print("Connecting to: " .. tostring(os.getenv("DBUS_SESSION_BUS_ADDRESS")))
 
@@ -30,7 +30,7 @@ local hex_uid = to_hex(uid)
 print("--> AUTH EXTERNAL " .. hex_uid)
 client:send("AUTH EXTERNAL " .. hex_uid .. "\r\n")
 
-local response = client:receive("*l")
+local response = assert(client:receive())
 print("<-- " .. response)
 
 if response:match("^OK") then
