@@ -11,31 +11,10 @@ ffi.cdef([[
     };
     int socket(int domain, int type, int protocol);
     int connect(int sockfd, const struct sockaddr *addr, uint32_t addrlen);
+	int read(int fd, const void buf* buf, size_t count);
     int write(int fd, const void *buf, size_t count);
     int close(int fd);
 ]])
-
---
--- -- 1. Create the socket
---
--- -- 2. Prepare the address structure
--- local addr = ffi.new("struct sockaddr_un")
--- addr.sun_family = AF_UNIX
--- ffi.copy(addr.sun_path, "/tmp/test.sock")
---
--- -- 3. Connect
--- if ffi.C.connect(fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
--- 	ffi.C.close(fd)
--- 	error("Connect failed - is the server running?")
--- end
---
--- -- 4. Write data
--- local msg = "Hello from Lua FFI!"
--- ffi.C.write(fd, msg, #msg)
---
--- -- 5. Cleanup
--- ffi.C.close(fd)
--- print("Message sent successfully!")
 
 ---@class Socket
 ---@field fd number
@@ -74,8 +53,10 @@ function Socket:send(message)
 	ffi.C.write(self.fd, message, #message)
 end
 
-function Socket:receive()
-
+---@param length? number
+---@return string
+function Socket:receive(length)
+	ffi.C.read(self.fd)
 end
 
 function Socket:close()
