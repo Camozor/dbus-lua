@@ -25,22 +25,20 @@ ffi.cdef([[
 local Socket = {}
 Socket.__index = Socket
 
----@return Socket
+---@return Socket | nil, string?
 local function socket()
 	local s = setmetatable({}, Socket)
 
-	local fd = ffi.C.socket(AF_UNIX, SOCK_STREAM, 0)
-	if fd < 0 then
-		print("Socket creation failed")
+	s.fd = ffi.C.socket(AF_UNIX, SOCK_STREAM, 0)
+	if s.fd < 0 then
+		return nil, "Socket creation failed"
 	end
-
-	s.fd = fd
 
 	return s
 end
 
 ---@param path string
----@return string | nil
+---@return boolean success, string? error_message
 function Socket:connect(path)
 	local addr = ffi.new("struct sockaddr_un") --[[@as sockaddr_un]]
 	addr.sun_family = AF_UNIX
@@ -49,26 +47,26 @@ function Socket:connect(path)
 	if ffi.C.connect(self.fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
 		local err = ffi.errno()
 		ffi.C.close(self.fd)
-		return "Connect failed, code: " .. tostring(err)
+		return false, "Connect failed, code: " .. tostring(err)
 	end
 
-	return nil
+	return true
 end
 
 ---@param message string
----@return string | nil
+---@return boolean success,string? error_message
 function Socket:send(message)
 	local bytes_written = ffi.C.write(self.fd, message, #message)
 
 	if bytes_written > 0 then
-		return nil
+		return true
 	else
-		return "Socket closed"
+		return false, "Socket closed"
 	end
 end
 
 ---@param length? number
----@return string | nil, string?
+---@return string | nil received_message, string? error_message
 function Socket:receive(length)
 	local len = length or 1024
 	local buf = ffi.new("char[?]", len)

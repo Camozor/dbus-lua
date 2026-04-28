@@ -1,23 +1,12 @@
 local socket = require("src.socket")
 
-local s = socket()
+local s = assert(socket())
+assert(s:connect("/tmp/test.sock"))
 
-local err = s:connect("/tmp/test.sock")
-if err then
-	error(err)
-end
+assert(s:send("Hello from lua"))
 
-err = s:send("Hello world")
-if err then
-	error(err)
-end
-
-local received, received_err = s:receive()
-if received_err then
-	error(received_err)
-end
-
+local received = assert(s:receive())
 print("Received data: " .. received)
-s:close()
 
+s:close()
 print("Closed")
