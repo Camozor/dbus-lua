@@ -11,7 +11,7 @@ ffi.cdef([[
     };
     int socket(int domain, int type, int protocol);
     int connect(int sockfd, const struct sockaddr *addr, uint32_t addrlen);
-	int read(int fd, const void buf* buf, size_t count);
+	int read(int fd, const void *buf, size_t count);
     int write(int fd, const void *buf, size_t count);
     int close(int fd);
 ]])
@@ -54,9 +54,20 @@ function Socket:send(message)
 end
 
 ---@param length? number
----@return string
+---@return string | nil, string?
 function Socket:receive(length)
-	ffi.C.read(self.fd)
+	local len = length or 1024
+	local buf = ffi.new("char[?]", len)
+	local bytes_read = ffi.C.read(self.fd, buf, len)
+
+	if bytes_read > 0 then
+		return ffi.string(buf, bytes_read)
+	elseif bytes_read == 0 then
+		return nil, "closed"
+	else
+		local err = ffi.errno()
+		return nil, "error: " .. tostring(err)
+	end
 end
 
 function Socket:close()
