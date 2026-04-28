@@ -36,6 +36,7 @@ local function socket()
 end
 
 ---@param path string
+---@return string | nil
 function Socket:connect(path)
 	local addr = ffi.new("struct sockaddr_un")
 	addr.sun_family = AF_UNIX
@@ -44,13 +45,22 @@ function Socket:connect(path)
 	if ffi.C.connect(self.fd, ffi.cast("struct sockaddr *", addr), ffi.sizeof(addr)) < 0 then
 		local err = ffi.errno()
 		ffi.C.close(self.fd)
-		print("Connect failed" .. tostring(err))
+		return "Connect failed, code: " .. tostring(err)
 	end
+
+	return nil
 end
 
 ---@param message string
+---@return string | nil
 function Socket:send(message)
-	ffi.C.write(self.fd, message, #message)
+	local bytes_written = ffi.C.write(self.fd, message, #message)
+
+	if bytes_written > 0 then
+		return nil
+	else
+		return "Socket closed"
+	end
 end
 
 ---@param length? number
@@ -63,10 +73,10 @@ function Socket:receive(length)
 	if bytes_read > 0 then
 		return ffi.string(buf, bytes_read)
 	elseif bytes_read == 0 then
-		return nil, "closed"
+		return nil, "Socket closed"
 	else
 		local err = ffi.errno()
-		return nil, "error: " .. tostring(err)
+		return nil, "Error: " .. tostring(err)
 	end
 end
 
