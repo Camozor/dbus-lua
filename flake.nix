@@ -7,8 +7,12 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      myLuaEnv = pkgs.lua5_1.withPackages (ps: with ps; [ busted ]);
     in {
-      defaultPackage.${system} =
-        pkgs.mkShell { buildInputs = with pkgs; [ lua just ]; };
+      defaultPackage.${system} = pkgs.mkShell {
+        buildInputs = with pkgs;
+          [ luajit lua51Packages.luarocks stylua myLuaEnv ] ++ [ just ]
+          ++ [ socat ];
+      };
     };
 }
