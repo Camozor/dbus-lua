@@ -1,4 +1,4 @@
-local wire = require("dbus-lua.wire")
+local wire = require("lua.dbus-lua.wire")
 local DbusKind = wire.DbusKind
 
 describe("numbers", function()
@@ -11,6 +11,18 @@ describe("numbers", function()
 		it("non empty", function()
 			local padding = wire.compute_padding(4, wire.pack_fixed_byte(255, ""))
 			assert.equals("00 00 00", wire.pretty_hex_dump(padding))
+		end)
+	end)
+
+	describe("encode_int32", function()
+		it("positive number", function()
+			local encoded = wire.encode_int32(6)
+			assert.equals("06 00 00 00", wire.pretty_hex_dump(encoded))
+		end)
+
+		it("negative number", function()
+			local encoded = wire.encode_int32(-6)
+			assert.equals("fa ff ff ff", wire.pretty_hex_dump(encoded))
 		end)
 	end)
 
