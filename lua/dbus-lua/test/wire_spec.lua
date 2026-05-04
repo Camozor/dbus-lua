@@ -124,4 +124,13 @@ describe("numbers", function()
 			assert.equals(start .. padding_struct .. byte .. padding_string .. hi, wire.pretty_hex_dump(packed))
 		end)
 	end)
+
+	describe("compute_signature", function()
+		it("single types", function()
+			---@type DbusType
+			local t = { kind = DbusKind.Int32, value = 1454 }
+
+			assert.equals("u", wire.compute_signature(t))
+		end)
+	end)
 end)
