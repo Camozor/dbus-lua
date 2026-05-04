@@ -6,6 +6,7 @@ local wire = require("dbus-lua.wire")
 ---@field interface string?
 ---@field member string
 ---@field destination string
+---@field body DbusType?
 
 ---@class DbusConfig
 ---@field bus_address? string
@@ -110,6 +111,7 @@ function Dbus:call_method(opt)
 		member = opt.member,
 		destination = opt.destination,
 		serial = self.serial,
+		body = opt.body,
 	}
 	local packed_message = wire.pack_message(message)
 
