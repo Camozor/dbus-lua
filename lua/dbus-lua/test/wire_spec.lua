@@ -132,5 +132,12 @@ describe("numbers", function()
 
 			assert.equals("u", wire.compute_signature(t))
 		end)
+
+		-- it("array", function()
+		-- 	---@type DbusType[]
+		-- 	local array = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } }
+		--
+		-- 	assert.equals("au", wire.compute_signature(array))
+		-- end)
 	end)
 end)

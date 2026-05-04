@@ -323,6 +323,12 @@ M.compute_signature = function(type)
 		return type.kind
 	end
 
+	if type.kind == M.DbusKind.Array then
+	end
+
+	if type.kind == M.DbusKind.Struct then
+	end
+
 	return ""
 end
 
