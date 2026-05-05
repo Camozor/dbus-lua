@@ -1,3 +1,4 @@
+local utils = require("lua.dbus-lua.utils")
 ---@enum DbusMessageType
 local DbusMessageType = {
 	Method = "method",
@@ -16,6 +17,15 @@ local DbusMessageType = {
 local M = {}
 
 M.DbusMessageType = DbusMessageType
+
+---@param n number
+---@return string
+M.encode_int16 = function(n)
+	local b1 = n % 256
+	n = (n - b1) / 256
+	local b2 = n % 256
+	return string.char(b1, b2)
+end
 
 ---@param n number
 ---@return string
@@ -49,6 +59,15 @@ M.encode_int64 = function(n)
 	n = (n - b7) / 256
 	local b8 = n % 256
 	return string.char(b1, b2, b3, b4, b5, b6, b7, b8)
+end
+
+---@param n number
+---@return string
+M.encode_uint16 = function(n)
+	local b1 = n % 256
+	n = (n - b1) / 256
+	local b2 = n % 256
+	return string.char(b1, b2)
 end
 
 ---@param n number
@@ -122,6 +141,13 @@ end
 
 ---@param n number
 ---@return string
+M.pack_fixed_int16 = function(n, marshaled)
+	local padding = M.compute_padding(2, marshaled)
+	return marshaled .. padding .. M.encode_int16(n)
+end
+
+---@param n number
+---@return string
 M.pack_fixed_int32 = function(n, marshaled)
 	local padding = M.compute_padding(4, marshaled)
 	return marshaled .. padding .. M.encode_int32(n)
@@ -133,6 +159,13 @@ end
 M.pack_fixed_int64 = function(n, marshaled)
 	local padding = M.compute_padding(8, marshaled)
 	return marshaled .. padding .. M.encode_int64(n)
+end
+
+---@param n number
+---@return string
+M.pack_fixed_uint16 = function(n, marshaled)
+	local padding = M.compute_padding(2, marshaled)
+	return marshaled .. padding .. M.encode_uint16(n)
 end
 
 ---@param marshaled string
@@ -186,25 +219,29 @@ M.pack_array = function(dbus_array, marshaled)
 	return marshaled_length .. marshaled_elements
 end
 
----@param dbus_type DbusType
+---@param dbus_type DbusType | DbusType[]
 ---@param marshaled string
 ---@return string
 M.pack_type = function(dbus_type, marshaled)
 	local marshaled_result = marshaled
-	if dbus_type.kind == M.DbusKind.Byte then
+	if utils.is_array(dbus_type) then
+		marshaled_result = M.pack_array(dbus_type, marshaled_result)
+	elseif dbus_type.kind == M.DbusKind.Byte then
 		marshaled_result = M.pack_fixed_byte(dbus_type.value --[[@as number]], marshaled_result)
+	elseif dbus_type.kind == M.DbusKind.Int16 then
+		marshaled_result = M.pack_fixed_int16(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Int32 then
 		marshaled_result = M.pack_fixed_int32(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Int64 then
 		marshaled_result = M.pack_fixed_int64(dbus_type.value --[[@as number]], marshaled_result)
+	elseif dbus_type.kind == M.DbusKind.Uint16 then
+		marshaled_result = M.pack_fixed_uint16(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Uint32 then
 		marshaled_result = M.pack_fixed_uint32(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Uint64 then
 		marshaled_result = M.pack_fixed_uint64(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.String or dbus_type.kind == M.DbusKind.ObjectPath then
 		marshaled_result = M.pack_fixed_string(dbus_type.value --[[@as string]], marshaled_result)
-	elseif dbus_type.kind == M.DbusKind.Array then
-		marshaled_result = M.pack_array(dbus_type.value --[[@as DbusVariant]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Struct then
 		marshaled_result = M.pack_struct(dbus_type.value --[[@as DbusType[] ]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Variant then
@@ -255,12 +292,54 @@ M.pack_message = function(dbus_message)
 	if dbus_message.body then
 		local dbus_body = dbus_message.body --[[@as DbusType]]
 		local body = M.pack_message_body(dbus_body)
-		local message = M.pack_message_header(dbus_message, { length = #body, signature = "x" })
+		local body_signature = M.compute_signature(dbus_body)
+
+		local message = M.pack_message_header(dbus_message, { length = #body, signature = body_signature })
 
 		return message .. body
 	else
 		return M.pack_message_header(dbus_message)
 	end
+end
+
+---@param type DbusType
+---@return string
+M.compute_signature = function(type)
+	local simple_types = {
+		M.DbusKind.Byte,
+		M.DbusKind.Boolean,
+		M.DbusKind.Int16,
+		M.DbusKind.Int32,
+		M.DbusKind.Int64,
+		M.DbusKind.Uint16,
+		M.DbusKind.Uint32,
+		M.DbusKind.Uint64,
+		M.DbusKind.Double,
+		M.DbusKind.UnixFd,
+		M.DbusKind.String,
+		M.DbusKind.ObjectPath,
+	}
+	if utils.array_contains(simple_types, type.kind) then
+		return type.kind
+	end
+
+	if utils.is_array(type) then
+		local element_type_signature = M.compute_signature(type[1])
+		return M.DbusKind.Array .. element_type_signature
+	end
+
+	if type.kind == M.DbusKind.Struct then
+		local struct_elements = type.value --[[@as DbusType[] ]]
+		local elements_signature = ""
+
+		for _, element in ipairs(struct_elements) do
+			elements_signature = elements_signature .. M.compute_signature(element)
+		end
+
+		return "(" .. elements_signature .. ")"
+	end
+
+	return "Oops"
 end
 
 ---@param dbus_body DbusType
@@ -326,10 +405,11 @@ end
 M.DbusKind = {
 	Byte = "y",
 	Boolean = "b",
-	Int16 = "q",
-	Int32 = "u",
-	Uint32 = "i",
+	Int16 = "n",
+	Int32 = "i",
 	Int64 = "x",
+	Uint16 = "q",
+	Uint32 = "u",
 	Uint64 = "t",
 	Double = "d",
 	UnixFd = "h",

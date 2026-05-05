@@ -124,4 +124,30 @@ describe("numbers", function()
 			assert.equals(start .. padding_struct .. byte .. padding_string .. hi, wire.pretty_hex_dump(packed))
 		end)
 	end)
+
+	describe("compute_signature", function()
+		it("single types", function()
+			---@type DbusType
+			local t = { kind = DbusKind.Int32, value = 1454 }
+
+			assert.equals("i", wire.compute_signature(t))
+		end)
+
+		it("array", function()
+			---@type DbusType[]
+			local array = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } }
+
+			assert.equals("ai", wire.compute_signature(array))
+		end)
+
+		it("struct", function()
+			---@type DbusType
+			local struct = {
+				kind = DbusKind.Struct,
+				value = { { kind = DbusKind.Uint32, value = 67 }, { kind = DbusKind.String, value = "Hello" } },
+			}
+
+			assert.equals("(us)", wire.compute_signature(struct))
+		end)
+	end)
 end)
