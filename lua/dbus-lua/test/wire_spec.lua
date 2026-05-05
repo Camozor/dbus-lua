@@ -144,10 +144,10 @@ describe("numbers", function()
 			---@type DbusType
 			local struct = {
 				kind = DbusKind.Struct,
-				value = { { kind = DbusKind.Uint32, value = 67 }, { kind = DbusKind.Uint32, value = 42 } },
+				value = { { kind = DbusKind.Uint32, value = 67 }, { kind = DbusKind.String, value = "Hello" } },
 			}
 
-			assert.equals("(uu)", wire.compute_signature(struct))
+			assert.equals("(us)", wire.compute_signature(struct))
 		end)
 	end)
 end)
