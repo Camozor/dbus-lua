@@ -219,12 +219,14 @@ M.pack_array = function(dbus_array, marshaled)
 	return marshaled_length .. marshaled_elements
 end
 
----@param dbus_type DbusType
+---@param dbus_type DbusType | DbusType[]
 ---@param marshaled string
 ---@return string
 M.pack_type = function(dbus_type, marshaled)
 	local marshaled_result = marshaled
-	if dbus_type.kind == M.DbusKind.Byte then
+	if utils.is_array(dbus_type) then
+		marshaled_result = M.pack_array(dbus_type, marshaled_result)
+	elseif dbus_type.kind == M.DbusKind.Byte then
 		marshaled_result = M.pack_fixed_byte(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Int16 then
 		marshaled_result = M.pack_fixed_int16(dbus_type.value --[[@as number]], marshaled_result)
@@ -240,8 +242,6 @@ M.pack_type = function(dbus_type, marshaled)
 		marshaled_result = M.pack_fixed_uint64(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.String or dbus_type.kind == M.DbusKind.ObjectPath then
 		marshaled_result = M.pack_fixed_string(dbus_type.value --[[@as string]], marshaled_result)
-	elseif dbus_type.kind == M.DbusKind.Array then
-		marshaled_result = M.pack_array(dbus_type.value --[[@as DbusVariant]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Struct then
 		marshaled_result = M.pack_struct(dbus_type.value --[[@as DbusType[] ]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Variant then
