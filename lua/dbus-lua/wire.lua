@@ -323,13 +323,23 @@ M.compute_signature = function(type)
 		return type.kind
 	end
 
-	if type.kind == M.DbusKind.Array then
+	if utils.is_array(type) then
+		local element_type_signature = M.compute_signature(type[1])
+		return M.DbusKind.Array .. element_type_signature
 	end
 
 	if type.kind == M.DbusKind.Struct then
+		local struct_elements = type.value --[[@as DbusType[] ]]
+		local elements_signature = ""
+
+		for _, element in ipairs(struct_elements) do
+			elements_signature = elements_signature .. M.compute_signature(element)
+		end
+
+		return "(" .. elements_signature .. ")"
 	end
 
-	return ""
+	return "Oops"
 end
 
 ---@param dbus_body DbusType
@@ -396,10 +406,10 @@ M.DbusKind = {
 	Byte = "y",
 	Boolean = "b",
 	Int16 = "n",
-	Int32 = "u",
+	Int32 = "i",
 	Int64 = "x",
 	Uint16 = "q",
-	Uint32 = "i",
+	Uint32 = "u",
 	Uint64 = "t",
 	Double = "d",
 	UnixFd = "h",

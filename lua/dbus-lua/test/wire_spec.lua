@@ -130,14 +130,24 @@ describe("numbers", function()
 			---@type DbusType
 			local t = { kind = DbusKind.Int32, value = 1454 }
 
-			assert.equals("u", wire.compute_signature(t))
+			assert.equals("i", wire.compute_signature(t))
 		end)
 
-		-- it("array", function()
-		-- 	---@type DbusType[]
-		-- 	local array = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } }
-		--
-		-- 	assert.equals("au", wire.compute_signature(array))
-		-- end)
+		it("array", function()
+			---@type DbusType[]
+			local array = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } }
+
+			assert.equals("ai", wire.compute_signature(array))
+		end)
+
+		it("struct", function()
+			---@type DbusType
+			local struct = {
+				kind = DbusKind.Struct,
+				value = { { kind = DbusKind.Uint32, value = 67 }, { kind = DbusKind.Uint32, value = 42 } },
+			}
+
+			assert.equals("(uu)", wire.compute_signature(struct))
+		end)
 	end)
 end)
