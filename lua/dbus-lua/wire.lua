@@ -1,4 +1,5 @@
-local utils = require("lua.dbus-lua.utils")
+local utils = require("dbus-lua.utils")
+
 ---@enum DbusMessageType
 local DbusMessageType = {
 	Method = "method",

@@ -72,8 +72,8 @@ function Dbus:connect()
 	return true
 end
 
----@return string
-function Dbus:pack_hello_message()
+---@return DbusMessage
+function Dbus:create_hello_message()
 	---@type DbusMessage
 	local message = {
 		message_type = wire.DbusMessageType.Method,
@@ -84,24 +84,13 @@ function Dbus:pack_hello_message()
 		serial = self.serial,
 	}
 
-	return wire.pack_message(message)
+	return message
 end
 
 ---@param opt DbusMethodCallOpt
 function Dbus:call_method(opt)
-	local hello = self:pack_hello_message()
-
-	assert(self.client:send(hello))
-
-	self.serial = self.serial + 1
-
-	local response_header, err = self.client:receive(16)
-	if not response_header then
-		print("Error receiving header: " .. tostring(err))
-		return
-	end
-
-	self.client:receive(128)
+	local hello = self:create_hello_message()
+	self:send_message(hello)
 
 	---@type DbusMessage
 	local message = {
@@ -113,17 +102,30 @@ function Dbus:call_method(opt)
 		serial = self.serial,
 		body = opt.body,
 	}
-	local packed_message = wire.pack_message(message)
+	self:send_message(message)
+end
 
-	assert(self.client:send(packed_message))
+---@param message DbusMessage
+function Dbus:send_message(message)
+	local serialized_message = wire.pack_message(message)
+
+	assert(self.client:send(serialized_message))
 
 	self.serial = self.serial + 1
 
-	local response_h, err_r = self.client:receive(16)
-	if not response_h then
-		print("Error receiving header: " .. tostring(err_r))
+	local response, err = self.client:receive(100)
+	if not response then
+		print("Error receiving header: " .. tostring(err))
 		return
 	end
+	print(wire.pretty_hex_dump(response))
+
+	local r, _ = self.client:receive(1024)
+	-- if r then
+	-- 	print(wire.pretty_hex_dump(r))
+	-- end
 end
+
+function Dbus:receive_response() end
 
 return Dbus
