@@ -1,0 +1,12 @@
+local deserialize = require("lua.dbus-lua.deserialize")
+local wire = require("lua.dbus-lua.wire")
+
+describe("deserialize", function()
+	describe("decode_uint32", function()
+		it("basic number", function()
+			local serialized = wire.encode_uint32(123456789)
+			local n = deserialize.decode_uint32(serialized)
+			assert.equals(123456789, n)
+		end)
+	end)
+end)

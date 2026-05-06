@@ -113,12 +113,11 @@ function Dbus:send_message(message)
 
 	self.serial = self.serial + 1
 
-	local response, err = self.client:receive(100)
-	if not response then
-		print("Error receiving header: " .. tostring(err))
-		return
-	end
-	print(wire.pretty_hex_dump(response))
+	self:receive_response()
+end
+
+function Dbus:receive_response()
+	self:receive_header()
 
 	local r, _ = self.client:receive(1024)
 	-- if r then
@@ -126,6 +125,12 @@ function Dbus:send_message(message)
 	-- end
 end
 
-function Dbus:receive_response() end
+function Dbus:receive_header()
+	local response, err = self.client:receive(16)
+	if not response then
+		print("Error receiving header: " .. tostring(err))
+		return
+	end
+end
 
 return Dbus
