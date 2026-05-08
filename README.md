@@ -15,7 +15,7 @@ Example with Lazy:
 ## Usage
 
 ```lua
-local Dbus = require("dbus-lua").dbus
+local Dbus = require("dbus-lua.dbus")
 local dbus = Dbus:new()
 assert(dbus:connect())
 

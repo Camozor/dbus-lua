@@ -1,5 +1,7 @@
 local socket = require("dbus-lua.socket")
 local wire = require("dbus-lua.wire")
+local deserialize = require("dbus-lua.deserialize")
+local utils = require("dbus-lua.utils")
 
 ---@class DbusMethodCallOpt
 ---@field path string
@@ -117,20 +119,28 @@ function Dbus:send_message(message)
 end
 
 function Dbus:receive_response()
-	self:receive_header()
+	local header = self:receive_header()
+	local body_length_str = header:sub(5, 8)
+	local body_length = deserialize.decode_uint32(body_length_str)
+	print("body length = " .. body_length)
 
-	local r, _ = self.client:receive(1024)
-	-- if r then
-	-- 	print(wire.pretty_hex_dump(r))
-	-- end
+	local body = assert(self.client:receive(body_length))
+	print("---------")
+	print(wire.pretty_hex_dump(body))
 end
 
+---@return string
 function Dbus:receive_header()
-	local response, err = self.client:receive(16)
-	if not response then
-		print("Error receiving header: " .. tostring(err))
-		return
-	end
+	local first_part = assert(self.client:receive(16))
+	local headers_length_str = first_part:sub(13)
+	local headers_length = deserialize.decode_uint32(headers_length_str)
+
+	local padding_length = utils.compute_difference(#first_part + headers_length, 8)
+
+	print("padding_length=" .. padding_length)
+	local last_part = assert(self.client:receive(headers_length + padding_length))
+
+	return first_part .. last_part
 end
 
 return Dbus

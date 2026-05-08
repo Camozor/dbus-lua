@@ -189,7 +189,7 @@ end
 ---@param marshaled string
 ---@return string
 M.compute_padding = function(max_padding, marshaled)
-	local len = -#marshaled % max_padding
+	local len = utils.compute_difference(#marshaled, max_padding)
 	local padding = ""
 	for _ = 1, len do
 		padding = padding .. "\0"
