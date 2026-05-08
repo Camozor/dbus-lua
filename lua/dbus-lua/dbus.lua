@@ -71,13 +71,14 @@ function Dbus:connect()
 
 	client:send("BEGIN\r\n")
 
+	self:send_hello_message()
+
 	return true
 end
 
----@return DbusMessage
-function Dbus:create_hello_message()
+function Dbus:send_hello_message()
 	---@type DbusMessage
-	local message = {
+	local hello = {
 		message_type = wire.DbusMessageType.Method,
 		path = "/org/freedesktop/DBus",
 		interface = "org.freedesktop.DBus",
@@ -85,15 +86,12 @@ function Dbus:create_hello_message()
 		destination = "org.freedesktop.DBus",
 		serial = self.serial,
 	}
-
-	return message
+	self:send_message(hello)
+	self:receive_response() -- Temporary, discards signal
 end
 
 ---@param opt DbusMethodCallOpt
 function Dbus:call_method(opt)
-	local hello = self:create_hello_message()
-	self:send_message(hello)
-
 	---@type DbusMessage
 	local message = {
 		message_type = wire.DbusMessageType.Method,
@@ -112,21 +110,27 @@ function Dbus:send_message(message)
 	local serialized_message = wire.pack_message(message)
 
 	assert(self.client:send(serialized_message))
+	self:receive_response()
 
 	self.serial = self.serial + 1
-
-	self:receive_response()
 end
 
+---@return string
 function Dbus:receive_response()
 	local header = self:receive_header()
 	local body_length_str = header:sub(5, 8)
 	local body_length = deserialize.decode_uint32(body_length_str)
-	print("body length = " .. body_length)
 
-	local body = assert(self.client:receive(body_length))
-	print("---------")
-	print(wire.pretty_hex_dump(body))
+	local response = header
+	if body_length > 0 then
+		local body = assert(self.client:receive(body_length))
+
+		response = response .. body
+	end
+
+	print("--- whole response ---")
+	print(wire.pretty_hex_dump(response))
+	return response
 end
 
 ---@return string
@@ -137,7 +141,6 @@ function Dbus:receive_header()
 
 	local padding_length = utils.compute_difference(#first_part + headers_length, 8)
 
-	print("padding_length=" .. padding_length)
 	local last_part = assert(self.client:receive(headers_length + padding_length))
 
 	return first_part .. last_part

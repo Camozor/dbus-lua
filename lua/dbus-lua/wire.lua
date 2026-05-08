@@ -325,7 +325,7 @@ M.compute_signature = function(type)
 	end
 
 	if utils.is_array(type) then
-		local element_type_signature = M.compute_signature(type[1])
+		local element_type_signature = M.compute_signature(type[1]) -- D-Bus arrays are never empty
 		return M.DbusKind.Array .. element_type_signature
 	end
 
