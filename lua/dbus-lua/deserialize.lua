@@ -7,4 +7,8 @@ M.decode_uint32 = function(s)
 	return b1 + 256 * b2 + math.pow(256, 2) * b3 + math.pow(256, 3) * b4
 end
 
+---@param s string
+---@return string
+M.decode_string = function(s) end
+
 return M

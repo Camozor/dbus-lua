@@ -19,6 +19,15 @@ local M = {}
 
 M.DbusMessageType = DbusMessageType
 
+M.ALIGNMENT_INT16 = 2
+M.ALIGNMENT_INT32 = 4
+M.ALIGNMENT_INT64 = 8
+M.ALIGNMENT_DOUBLE = 8
+M.ALIGNMENT_STRING = 4
+M.ALIGNMENT_ARRAY = 4
+M.ALIGNMENT_STRUCT = 8
+M.ALIGNMENT_BODY = 8
+
 ---@param n number
 ---@return string
 M.encode_int16 = function(n)
@@ -143,14 +152,14 @@ end
 ---@param n number
 ---@return string
 M.pack_fixed_int16 = function(n, marshaled)
-	local padding = M.compute_padding(2, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT16, marshaled)
 	return marshaled .. padding .. M.encode_int16(n)
 end
 
 ---@param n number
 ---@return string
 M.pack_fixed_int32 = function(n, marshaled)
-	local padding = M.compute_padding(4, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT32, marshaled)
 	return marshaled .. padding .. M.encode_int32(n)
 end
 
@@ -158,14 +167,14 @@ end
 ---@param marshaled string
 ---@return string
 M.pack_fixed_int64 = function(n, marshaled)
-	local padding = M.compute_padding(8, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT64, marshaled)
 	return marshaled .. padding .. M.encode_int64(n)
 end
 
 ---@param n number
 ---@return string
 M.pack_fixed_uint16 = function(n, marshaled)
-	local padding = M.compute_padding(2, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT16, marshaled)
 	return marshaled .. padding .. M.encode_uint16(n)
 end
 
@@ -173,7 +182,7 @@ end
 ---@param n number
 ---@return string
 M.pack_fixed_uint32 = function(n, marshaled)
-	local padding = M.compute_padding(4, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT32, marshaled)
 	return marshaled .. padding .. M.encode_uint32(n)
 end
 
@@ -181,7 +190,7 @@ end
 ---@param marshaled string
 ---@return string
 M.pack_fixed_uint64 = function(n, marshaled)
-	local padding = M.compute_padding(8, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_INT64, marshaled)
 	return marshaled .. padding .. M.encode_uint64(n)
 end
 
@@ -202,7 +211,7 @@ end
 ---@param marshaled string
 ---@return string
 M.pack_fixed_string = function(s, marshaled)
-	local padding = M.compute_padding(4, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_STRING, marshaled)
 	return marshaled .. padding .. M.encode_string(s)
 end
 
@@ -270,7 +279,7 @@ end
 ---@param marshaled string
 ---@return string
 M.pack_struct = function(dbus_struct, marshaled)
-	local padding = M.compute_padding(8, marshaled)
+	local padding = M.compute_padding(M.ALIGNMENT_STRUCT, marshaled)
 	local marshaled_elements = marshaled .. padding
 
 	for _, element in ipairs(dbus_struct) do

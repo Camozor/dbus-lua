@@ -3,6 +3,10 @@ local wire = require("dbus-lua.wire")
 local deserialize = require("dbus-lua.deserialize")
 local utils = require("dbus-lua.utils")
 
+---@class DbusRawResponse
+---@field header string
+---@field body string?
+
 ---@class DbusMethodCallOpt
 ---@field path string
 ---@field interface string?
@@ -115,21 +119,20 @@ function Dbus:send_message(message)
 	self.serial = self.serial + 1
 end
 
----@return string
+---@return DbusRawResponse
 function Dbus:receive_response()
 	local header = self:receive_header()
+
+	---@type DbusRawResponse
+	local response = { header = header }
+
 	local body_length_str = header:sub(5, 8)
 	local body_length = deserialize.decode_uint32(body_length_str)
-
-	local response = header
 	if body_length > 0 then
 		local body = assert(self.client:receive(body_length))
-
-		response = response .. body
+		response.body = body
 	end
 
-	print("--- whole response ---")
-	print(wire.pretty_hex_dump(response))
 	return response
 end
 
@@ -139,11 +142,12 @@ function Dbus:receive_header()
 	local headers_length_str = first_part:sub(13)
 	local headers_length = deserialize.decode_uint32(headers_length_str)
 
-	local padding_length = utils.compute_difference(#first_part + headers_length, 8)
+	local padding_length = utils.compute_difference(#first_part + headers_length, wire.ALIGNMENT_BODY)
 
 	local last_part = assert(self.client:receive(headers_length + padding_length))
+	local last_part_no_padding = last_part:sub(0, headers_length)
 
-	return first_part .. last_part
+	return first_part .. last_part_no_padding
 end
 
 return Dbus
