@@ -24,6 +24,9 @@ utils.is_struct = function(table)
 	return type(table) == "table" and table[1] == nil
 end
 
+---@param value number
+---@param step number
+---@return number
 utils.compute_difference = function(value, step)
 	return -value % step
 end

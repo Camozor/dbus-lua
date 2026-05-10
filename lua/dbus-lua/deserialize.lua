@@ -1,8 +1,12 @@
+local utils = require("dbus-lua.utils")
+local wire = require("dbus-lua.wire")
+local DbusKind = wire.DbusKind
+
 local M = {}
 
 ---@param s string
 ---@param number_bytes number
----@return number
+---@return number decoded, number bytes_read
 local function decode_uint(s, number_bytes)
 	local res = 0
 	for i = 1, number_bytes do
@@ -10,23 +14,23 @@ local function decode_uint(s, number_bytes)
 		res = res + (byte * math.pow(256, i - 1))
 	end
 
-	return res
+	return res, number_bytes
 end
 
 ---@param s string
----@return number
+---@return number decoded, number bytes_read
 M.decode_uint16 = function(s)
 	return decode_uint(s, 2)
 end
 
 ---@param s string
----@return number
+---@return number decoded, number bytes_read
 M.decode_uint32 = function(s)
 	return decode_uint(s, 4)
 end
 
 ---@param s string
----@return number
+---@return number decoded, number bytes_read
 M.decode_uint64 = function(s)
 	return decode_uint(s, 8)
 end
@@ -41,6 +45,19 @@ M.decode_string = function(s)
 	return deserialized, (#length_str + length + 1)
 end
 
-M.unpack_uint32 = function(marshalled, signature) end
+---@param marshalled string
+---@param current_pos number
+---@return DbusType type, number bytes_read
+M.unpack_uint32 = function(marshalled, current_pos)
+	local padding = utils.compute_difference(current_pos - 1, wire.ALIGNMENT_INT32)
+
+	local remainder = marshalled:sub(padding + current_pos)
+	local number, bytes_read = M.decode_uint32(remainder)
+
+	---@type DbusType
+	local dbus_type = { kind = DbusKind.Uint32, value = number }
+
+	return dbus_type, padding + bytes_read
+end
 
 return M

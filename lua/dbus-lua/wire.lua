@@ -63,7 +63,7 @@ end
 ---@param n number
 ---@return string
 M.encode_uint16 = function(n)
-	return encode_uint(n, 2)
+	return encode_uint(n, 2) -- FIXME handle big numbers
 end
 
 ---@param n number

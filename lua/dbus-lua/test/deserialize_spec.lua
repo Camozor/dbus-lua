@@ -19,4 +19,16 @@ describe("deserialize", function()
 			assert.equals(10, bytes_read)
 		end)
 	end)
+
+	describe("unpack_uint32", function()
+		it("with some padding", function()
+			local padding = "\0\0\0"
+			local serialized = padding .. wire.encode_uint32(13433)
+
+			local unpacked, read_bytes = deserialize.unpack_uint32(serialized, 2)
+			assert.equals(wire.DbusKind.Uint32, unpacked.kind)
+			assert.equals(13433, unpacked.value)
+			assert.equals(7, read_bytes)
+		end)
+	end)
 end)
