@@ -29,89 +29,53 @@ M.ALIGNMENT_STRUCT = 8
 M.ALIGNMENT_BODY = 8
 
 ---@param n number
+---@param number_bytes number
+---@return string
+local function encode_uint(n, number_bytes)
+	local s = ""
+	for _ = 1, number_bytes do
+		local byte = n % 256
+		n = (n - byte) / 256
+		s = s .. string.char(byte)
+	end
+
+	return s
+end
+
+---@param n number
 ---@return string
 M.encode_int16 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	return string.char(b1, b2)
+	return encode_uint(n, 2)
 end
 
 ---@param n number
 ---@return string
 M.encode_int32 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	n = (n - b2) / 256
-	local b3 = n % 256
-	n = (n - b3) / 256
-	local b4 = n % 256
-	return string.char(b1, b2, b3, b4)
+	return encode_uint(n, 4)
 end
 
 ---@param n number
 ---@return string
 M.encode_int64 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	n = (n - b2) / 256
-	local b3 = n % 256
-	n = (n - b3) / 256
-	local b4 = n % 256
-	n = (n - b4) / 256
-	local b5 = n % 256
-	n = (n - b5) / 256
-	local b6 = n % 256
-	n = (n - b6) / 256
-	local b7 = n % 256
-	n = (n - b7) / 256
-	local b8 = n % 256
-	return string.char(b1, b2, b3, b4, b5, b6, b7, b8)
+	return encode_uint(n, 8)
 end
 
 ---@param n number
 ---@return string
 M.encode_uint16 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	return string.char(b1, b2)
+	return encode_uint(n, 2)
 end
 
 ---@param n number
 ---@return string
 M.encode_uint32 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	n = (n - b2) / 256
-	local b3 = n % 256
-	n = (n - b3) / 256
-	local b4 = n % 256
-	return string.char(b1, b2, b3, b4)
+	return encode_uint(n, 4)
 end
 
 ---@param n number
 ---@return string
 M.encode_uint64 = function(n)
-	local b1 = n % 256
-	n = (n - b1) / 256
-	local b2 = n % 256
-	n = (n - b2) / 256
-	local b3 = n % 256
-	n = (n - b3) / 256
-	local b4 = n % 256
-	n = (n - b4) / 256
-	local b5 = n % 256
-	n = (n - b5) / 256
-	local b6 = n % 256
-	n = (n - b6) / 256
-	local b7 = n % 256
-	n = (n - b7) / 256
-	local b8 = n % 256
-	return string.char(b1, b2, b3, b4, b5, b6, b7, b8)
+	return encode_uint(n, 8)
 end
 
 ---@param b number
