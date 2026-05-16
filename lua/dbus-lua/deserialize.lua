@@ -36,6 +36,12 @@ M.decode_uint64 = function(s)
 end
 
 ---@param s string
+---@return number decoded, number bytes_read
+M.decode_byte = function(s)
+	return string.byte(s), 1
+end
+
+---@param s string
 ---@return string deserialized, number bytes_read
 M.decode_string = function(s)
 	local length_str = s:sub(1, 4)
@@ -43,6 +49,18 @@ M.decode_string = function(s)
 	local deserialized = s:sub(5, 5 + length - 1)
 
 	return deserialized, (#length_str + length + 1)
+end
+
+---@param marshalled string
+---@return DbusType type, number bytes_read
+M.unpack_byte = function(marshalled)
+	local s = marshalled:sub(1)
+	local number, bytes_read = M.decode_byte(s)
+
+	---@type DbusType
+	local dbus_type = { kind = DbusKind.Byte, value = number }
+
+	return dbus_type, bytes_read
 end
 
 ---@param marshalled string
@@ -59,5 +77,10 @@ M.unpack_uint32 = function(marshalled, current_pos)
 
 	return dbus_type, padding + bytes_read
 end
+
+---@param marshalled string
+---@param current_pos number
+---@param signature string
+M.unpack_type = function(marshalled, current_pos, signature) end
 
 return M

@@ -71,16 +71,19 @@ describe("numbers", function()
 		it("pack array of uint32", function()
 			local m = wire.pack_fixed_uint32(10, "")
 
-			---@type DbusType[]
-			local array = { { kind = DbusKind.Uint32, value = 5 } }
+			---@type DbusType
+			local array = { kind = DbusKind.Array, value = { { kind = DbusKind.Uint32, value = 5 } } }
 
 			local packed = wire.pack_array(array, m)
 			assert.equals("0a " .. "00 00 00 " .. "04 00 00 00 " .. "05 00 00 00", wire.pretty_hex_dump(packed))
 		end)
 
 		it("pack array of strings", function()
-			---@type DbusType[]
-			local array = { { kind = DbusKind.String, value = "Hi" }, { kind = DbusKind.String, value = "Bye" } }
+			---@type DbusType
+			local array = {
+				kind = DbusKind.Array,
+				value = { { kind = DbusKind.String, value = "Hi" }, { kind = DbusKind.String, value = "Bye" } },
+			}
 
 			local packed = wire.pack_array(array, "")
 

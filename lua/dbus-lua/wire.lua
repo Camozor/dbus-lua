@@ -179,12 +179,14 @@ M.pack_fixed_string = function(s, marshaled)
 	return marshaled .. padding .. M.encode_string(s)
 end
 
----@param dbus_array DbusType[]
+---@param dbus_array DbusType
 ---@param marshaled string
 ---@return string
 M.pack_array = function(dbus_array, marshaled)
+	local array = dbus_array.value --[[@as DbusType[] ]]
+
 	local marshaled_elements = ""
-	for _, element in ipairs(dbus_array) do
+	for _, element in ipairs(array) do
 		marshaled_elements = M.pack_type(element, marshaled_elements)
 	end
 
@@ -193,13 +195,15 @@ M.pack_array = function(dbus_array, marshaled)
 	return marshaled_length .. marshaled_elements
 end
 
----@param dbus_type DbusType | DbusType[]
+---@param dbus_type DbusType
 ---@param marshaled string
 ---@return string
 M.pack_type = function(dbus_type, marshaled)
 	local marshaled_result = marshaled
-	if utils.is_array(dbus_type) then
+	if dbus_type.kind == M.DbusKind.Array then
 		marshaled_result = M.pack_array(dbus_type, marshaled_result)
+	elseif dbus_type.kind == M.DbusKind.Struct then
+		marshaled_result = M.pack_struct(dbus_type.value --[[@as DbusType[] ]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Byte then
 		marshaled_result = M.pack_fixed_byte(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Int16 then
@@ -216,8 +220,6 @@ M.pack_type = function(dbus_type, marshaled)
 		marshaled_result = M.pack_fixed_uint64(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.String or dbus_type.kind == M.DbusKind.ObjectPath then
 		marshaled_result = M.pack_fixed_string(dbus_type.value --[[@as string]], marshaled_result)
-	elseif dbus_type.kind == M.DbusKind.Struct then
-		marshaled_result = M.pack_struct(dbus_type.value --[[@as DbusType[] ]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Variant then
 		marshaled_result = M.pack_variant(dbus_type.value --[[@as DbusVariant]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Signature then
@@ -276,6 +278,8 @@ M.pack_message = function(dbus_message)
 	end
 end
 
+-- Completly wrong. TODO use provided signature to pack and unpack type.
+
 ---@param type DbusType
 ---@return string
 M.compute_signature = function(type)
@@ -298,7 +302,7 @@ M.compute_signature = function(type)
 	end
 
 	if utils.is_array(type) then
-		local element_type_signature = M.compute_signature(type[1]) -- D-Bus arrays are never empty
+		local element_type_signature = M.compute_signature(type[1])
 		return M.DbusKind.Array .. element_type_signature
 	end
 
@@ -313,7 +317,7 @@ M.compute_signature = function(type)
 		return "(" .. elements_signature .. ")"
 	end
 
-	return "Oops"
+	return "UNDEFINED"
 end
 
 ---@param dbus_body DbusType
@@ -346,28 +350,30 @@ M.pack_message_header = function(dbus_message, body_opt)
 	message = M.pack_fixed_uint32(body_length, message)
 	message = M.pack_fixed_uint32(dbus_message.serial, message)
 
-	local header_fields = {}
-	table.insert(header_fields, M.create_header_field({ code = M.HeaderFieldCode.Path, value = dbus_message.path }))
+	---@type DbusType[]
+	local headers = {}
+
+	table.insert(headers, M.create_header_field({ code = M.HeaderFieldCode.Path, value = dbus_message.path }))
 
 	if dbus_message.interface then
 		table.insert(
-			header_fields,
+			headers,
 			M.create_header_field({ code = M.HeaderFieldCode.Interface, value = dbus_message.interface })
 		)
 	end
 
-	table.insert(header_fields, M.create_header_field({ code = M.HeaderFieldCode.Member, value = dbus_message.member }))
+	table.insert(headers, M.create_header_field({ code = M.HeaderFieldCode.Member, value = dbus_message.member }))
 	table.insert(
-		header_fields,
+		headers,
 		M.create_header_field({ code = M.HeaderFieldCode.Destination, value = dbus_message.destination })
 	)
 
 	if body_opt then
-		table.insert(
-			header_fields,
-			M.create_header_field({ code = M.HeaderFieldCode.Signature, value = body_opt.signature })
-		)
+		table.insert(headers, M.create_header_field({ code = M.HeaderFieldCode.Signature, value = body_opt.signature }))
 	end
+
+	---@type DbusType
+	local header_fields = { kind = M.DbusKind.Array, value = headers }
 
 	message = M.pack_array(header_fields, message)
 	local end_padding = M.compute_padding(8, message)
@@ -395,6 +401,8 @@ M.DbusKind = {
 	Array = "a",
 	Struct = "r",
 	Variant = "v",
+
+	Tuple = "tuple", -- Do not serialize this variant
 }
 
 ---@class DbusType
