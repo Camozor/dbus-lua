@@ -54,7 +54,7 @@ function Socket:connect(path)
 end
 
 ---@param message string
----@return boolean success,string? error_message
+---@return boolean success, string? error_message
 function Socket:send(message)
 	local bytes_written = ffi.C.write(self.fd, message, #message)
 
