@@ -301,8 +301,8 @@ M.compute_signature = function(type)
 		return type.kind
 	end
 
-	if utils.is_array(type) then
-		local element_type_signature = M.compute_signature(type[1])
+	if type.kind == M.DbusKind.Array then
+		local element_type_signature = M.compute_signature(type.value[1])
 		return M.DbusKind.Array .. element_type_signature
 	end
 

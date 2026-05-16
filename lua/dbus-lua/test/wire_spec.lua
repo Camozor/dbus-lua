@@ -137,8 +137,11 @@ describe("numbers", function()
 		end)
 
 		it("array", function()
-			---@type DbusType[]
-			local array = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } }
+			---@type DbusType
+			local array = {
+				kind = DbusKind.Array,
+				value = { { kind = DbusKind.Int32, value = 1 }, { kind = DbusKind.Int32, value = 2 } },
+			}
 
 			assert.equals("ai", wire.compute_signature(array))
 		end)
