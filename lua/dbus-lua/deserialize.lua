@@ -81,6 +81,26 @@ end
 ---@param marshalled string
 ---@param current_pos number
 ---@param signature string
-M.unpack_type = function(marshalled, current_pos, signature) end
+---@return DbusType type, number bytes_read
+M.unpack_struct = function(marshalled, current_pos, signature)
+	local elements_signature = signature:sub(2, #signature - 1)
+
+	for i = 1, #elements_signature do
+		local c = elements_signature:sub(i, i)
+		M.unpack_type(marshalled, 
+	end
+
+	---@type DbusType
+	local struct = { kind = DbusKind.Struct, value = {} }
+	return struct, 0
+end
+
+---@param marshalled string
+---@param current_pos number
+---@param signature string
+---@return DbusType type, number bytes_read
+M.unpack_type = function(marshalled, current_pos, signature)
+	return { kind = DbusKind.String, value = "TODO" }, 0
+end
 
 return M

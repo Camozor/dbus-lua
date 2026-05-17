@@ -33,4 +33,21 @@ describe("deserialize", function()
 			assert.equals(5, read_bytes)
 		end)
 	end)
+
+	describe("unpack_struct", function()
+		it("unpack struct", function()
+			local serialized = wire.pack_fixed_byte(255, "")
+
+			---@type DbusType
+			local struct = {
+				kind = wire.DbusKind.Struct,
+				value = { { kind = wire.DbusKind.Int32, value = 1 }, { kind = wire.DbusKind.Int32, value = 2 } },
+			}
+
+			serialized = wire.pack_struct(struct, serialized)
+
+			local unpacked, _ = deserialize.unpack_struct(serialized, 2, "(ii)")
+			assert.equals(wire.DbusKind.Struct, unpacked.kind)
+		end)
+	end)
 end)
