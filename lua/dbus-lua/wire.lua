@@ -203,7 +203,7 @@ M.pack_type = function(dbus_type, marshaled)
 	if dbus_type.kind == M.DbusKind.Array then
 		marshaled_result = M.pack_array(dbus_type, marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Struct then
-		marshaled_result = M.pack_struct(dbus_type.value --[[@as DbusType[] ]], marshaled_result)
+		marshaled_result = M.pack_struct(dbus_type, marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Byte then
 		marshaled_result = M.pack_fixed_byte(dbus_type.value --[[@as number]], marshaled_result)
 	elseif dbus_type.kind == M.DbusKind.Int16 then
@@ -241,14 +241,31 @@ M.pack_variant = function(dbus_variant, marshaled)
 	return M.pack_type(content, marshaled_with_signature)
 end
 
----@param dbus_struct DbusType[]
+---@param dbus_struct DbusType
 ---@param marshaled string
 ---@return string
 M.pack_struct = function(dbus_struct, marshaled)
+	local struct = dbus_struct.value --[[@as DbusType[] ]]
+
 	local padding = M.compute_padding(M.ALIGNMENT_STRUCT, marshaled)
 	local marshaled_elements = marshaled .. padding
 
-	for _, element in ipairs(dbus_struct) do
+	for _, element in ipairs(struct) do
+		marshaled_elements = M.pack_type(element, marshaled_elements)
+	end
+
+	return marshaled_elements
+end
+
+---@param dbus_tuple DbusType
+---@param marshaled string
+---@return string
+M.pack_tuple = function(dbus_tuple, marshaled)
+	local tuple = dbus_tuple.value --[[@as DbusType[] ]]
+
+	local marshaled_elements = marshaled
+
+	for _, element in ipairs(tuple) do
 		marshaled_elements = M.pack_type(element, marshaled_elements)
 	end
 

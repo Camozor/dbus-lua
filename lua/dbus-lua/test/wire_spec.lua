@@ -114,8 +114,11 @@ describe("numbers", function()
 		it("pack struct", function()
 			local m = wire.pack_fixed_byte(255, "")
 
-			---@type DbusType[]
-			local struct = { { kind = DbusKind.Byte, value = 0x03 }, { kind = DbusKind.String, value = "Hi" } }
+			---@type DbusType
+			local struct = {
+				kind = DbusKind.Struct,
+				value = { { kind = DbusKind.Byte, value = 0x03 }, { kind = DbusKind.String, value = "Hi" } },
+			}
 
 			local packed = wire.pack_struct(struct, m)
 
@@ -125,6 +128,24 @@ describe("numbers", function()
 			local padding_string = "00 00 00 "
 			local hi = "02 00 00 00 " .. "48 69 00"
 			assert.equals(start .. padding_struct .. byte .. padding_string .. hi, wire.pretty_hex_dump(packed))
+		end)
+	end)
+
+	describe("pack_tuple", function()
+		it("pack tuple", function()
+			local m = wire.pack_fixed_byte(255, "")
+
+			---@type DbusType
+			local tuple = {
+				kind = DbusKind.Tuple,
+				value = {
+					{ kind = DbusKind.ObjectPath, value = "foo" },
+					{ kind = DbusKind.String, value = "bar" },
+				},
+			}
+
+			local packed = wire.pack_tuple(tuple, m)
+			assert.equals("ff 00 00 00 03 00 00 00 66 6f 6f 00 03 00 00 00 62 61 72 00", wire.pretty_hex_dump(packed))
 		end)
 	end)
 
