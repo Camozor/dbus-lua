@@ -257,21 +257,6 @@ M.pack_struct = function(dbus_struct, marshaled)
 	return marshaled_elements
 end
 
----@param dbus_tuple DbusType
----@param marshaled string
----@return string
-M.pack_tuple = function(dbus_tuple, marshaled)
-	local tuple = dbus_tuple.value --[[@as DbusType[] ]]
-
-	local marshaled_elements = marshaled
-
-	for _, element in ipairs(tuple) do
-		marshaled_elements = M.pack_type(element, marshaled_elements)
-	end
-
-	return marshaled_elements
-end
-
 ---@param signature string
 ---@param marshaled string
 ---@return string
@@ -418,8 +403,6 @@ M.DbusKind = {
 	Array = "a",
 	Struct = "r",
 	Variant = "v",
-
-	Tuple = "tuple", -- Do not serialize this variant
 }
 
 ---@class DbusType
